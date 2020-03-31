@@ -56,7 +56,7 @@ int main() {
      //printf("Threads = %d | Array Size = %d | Tries = %d\n", NUMT, SIZE, NUMTRIES); 
      //printf("Peak Performance = %8.2lf MegaMults/sec.\n", maxMegaMults);
      //printf("Avg Performace = %8.2lf MegaMults/sec.\n", avgMegaMults);
-     printf("%8.2lf", maxMegaMults);
+     printf("%8.2lf", avgMegaMults);
 
      return 0;
 

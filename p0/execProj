@@ -1,25 +1,27 @@
 #!/bin/bash
 
-numthreads=(1 2 4)
-arraysize=(100 1000 5000 10000 15000 20000)
+numthreads=(1 4)
+arraysize=(100 1000 5000 10000 15000 20000 40000 80000)
+numtries=50
+file="avgMegaMults.txt"
 
-echo -n "x, " > table.txt
+echo -n "x, " > $file
 
 for t in ${arraysize[@]}
 do
-     echo -n "${t}, " >> table.txt
+     echo -n "${t}, " >> $file
 done
-echo -e "\n" >> table.txt
+echo -e "\n" >> $file
 
 
 for t in ${numthreads[@]}
 do
-     echo -n "${t}, " >> table.txt
+     echo -n "${t}, " >> $file
      for s in ${arraysize[@]}
      do
-          g++ -DNUMT=$t -DSIZE=$s -o proj main.cpp -O3 -lm -fopenmp
-          ./proj >> table.txt
-          echo -n ", " >> table.txt
+          g++ -DNUMT=$t -DSIZE=$s -DNUMTRIES=$numtries -o proj main.cpp -O3 -lm -fopenmp
+          ./proj >> $file
+          echo -n ", " >> $file
      done
-     echo -e "\n" >> table.txt
+     echo -e "\n" >> $file
 done

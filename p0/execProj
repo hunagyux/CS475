@@ -1,0 +1,25 @@
+#!/bin/bash
+
+numthreads=(1 2 4)
+arraysize=(100 1000 5000 10000 15000 20000)
+
+echo -n "x, " > table.txt
+
+for t in ${arraysize[@]}
+do
+     echo -n "${t}, " >> table.txt
+done
+echo -e "\n" >> table.txt
+
+
+for t in ${numthreads[@]}
+do
+     echo -n "${t}, " >> table.txt
+     for s in ${arraysize[@]}
+     do
+          g++ -DNUMT=$t -DSIZE=$s -o proj main.cpp -O3 -lm -fopenmp
+          ./proj >> table.txt
+          echo -n ", " >> table.txt
+     done
+     echo -e "\n" >> table.txt
+done

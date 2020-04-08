@@ -1,0 +1,26 @@
+#!/bin/bash
+
+numthreads=(1 2 4 8)
+numtrials=(50 100 500 1000 5000 10000 20000)
+numtries=100
+file="maxMegaMults.txt"
+
+echo -n "Trials, " > $file
+
+for t in ${numtrials[@]}
+do
+     echo -n "${t}, hit%, " >> $file
+done
+echo -e "\n" >> $file
+
+
+for t in ${numthreads[@]}
+do
+     echo -n "${t}, " >> $file
+     for s in ${numtrials[@]}
+     do
+          g++ -DNUMT=$t -DNUMTRIALS=$s -DNUMTRIES=$numtries -o proj main.cpp -O3 -lm -fopenmp
+          ./proj >> $file
+     done
+     echo -e "\n" >> $file
+done

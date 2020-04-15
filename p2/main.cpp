@@ -85,8 +85,9 @@ int main( int argc, char *argv[ ] ) {
       }
    } 
 
-   printf("Threads: %d Nodes: %d Area Sum: %0.2lf MegaHeightsPerSec: %0.2lf\n" \
-          , NUMT, NUMNODES, finalSum, maxHeights);
+   //printf("Threads: %d Nodes: %d Area Sum: %0.2lf MegaHeightsPerSec: %0.2lf\n" \
+   //       , NUMT, NUMNODES, finalSum, maxHeights);
+   printf("%0.2lf, %0.2lf ", maxHeights, finalSum);
 
    return 0;
 

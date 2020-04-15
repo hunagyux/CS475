@@ -78,7 +78,7 @@ int main( int argc, char *argv[ ] ) {
       }
    
       double time1 = omp_get_wtime( );
-      double megaHeightsPerSec = (double)NUMNODES / ( time1 - time0 ) / 1000000.;
+      double megaHeightsPerSec = (double)NUMNODES*NUMNODES / ( time1 - time0 ) / 1000000.;
       if(megaHeightsPerSec > maxHeights) {
          maxHeights = megaHeightsPerSec;
          finalSum = sum;

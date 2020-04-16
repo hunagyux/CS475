@@ -1,3 +1,23 @@
+/************************************************
+ * Program:        Project 2 CS475-400 Spring 2020
+ * Author:        Andrew Derringer
+ * Last Modified: 4/16/2020
+ * Summary:       Use multi-threading to determine
+ *                the area of a superquadric at some
+ *                given and consistent exponent N.
+ *                Track and return performance in
+ *                nodes/time processed and volume of
+ *                shape.
+ * Param:         [1] NUMT - (int) number of threads.
+ *                [2] NUMNODES - (int) number of nodes.
+ *                [3] N - (int) exp. value of superquadric.
+ *                [4] NUMTRIES - (int) number of trials to run.
+ * Outcome:       (string) Print performance and shape volume.
+ * Citation:      Boilerplate and height function taken
+ *                from OSU CS475 course materials.
+************************************************/
+
+
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,28 +62,32 @@ int main( int argc, char *argv[ ] ) {
    return 1;
    #endif
 
+   // Calculate and store size of full, half, quarter tile at given number nodes.
    float fullTileArea = ( ((XMAX - XMIN) / (float)(NUMNODES - 1)) *
                           ((YMAX - YMIN) / (float)(NUMNODES - 1)) );
    float halfTileArea = fullTileArea / 2;
    float quarterTileArea = fullTileArea / 4;
 
    omp_set_num_threads(NUMT); 
+
+   // Optimal values to be reported at end of iterations.
    float maxHeights = 0;
    float finalSum = 0;
 
    for(int j = 0; j < NUMTRIES; j++) {
       float sum = 0;
-  
       double time0 = omp_get_wtime( );
-   
+
       #pragma omp parallel for default(none) \
       shared(fullTileArea, halfTileArea, quarterTileArea) reduction(+:sum)
       for(int i = 0; i < NUMNODES*NUMNODES; i++) {
+         // Get row and column and use to get height at intersection.
          int iu = i % NUMNODES;
          int iv = i / NUMNODES;
          float z = height(iu, iv) * 2;
+
+         // Determine if quarter, half, or full tile area by node location.
          float xy;
-   
          if( (iu == 0 || iu == NUMNODES - 1) && (iv == 0 || iv == NUMNODES - 1) ) {
             xy = quarterTileArea;
          }
@@ -107,30 +131,4 @@ float height(int iu, int iv) {
 
    float height = pow(1. - xn - yn, 1. / (float)N);
    return height;
-}
-
-float Ranf( float low, float high ) {
-   float r = (float) rand(); // 0 - RAND_MAX
-   float t = r / (float) RAND_MAX; // 0. - 1.
-
-   return low + t * ( high - low );
-}
-
-int Ranf( int ilow, int ihigh ) {
-   float low = (float)ilow;
-   float high = ceil( (float)ihigh );
-
-   return (int) Ranf(low,high);
-}
-
-void TimeOfDaySeed( ) {
-   struct tm y2k = { 0 };
-   y2k.tm_hour = 0; y2k.tm_min = 0; y2k.tm_sec = 0;
-   y2k.tm_year = 100; y2k.tm_mon = 0; y2k.tm_mday = 1;
-
-   time_t timer;
-   time( &timer );
-   double seconds = difftime( timer, mktime(&y2k) );
-   unsigned int seed = (unsigned int)( 1000.*seconds ); // milliseconds
-   srand( seed );
 }

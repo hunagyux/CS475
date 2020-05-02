@@ -1,3 +1,13 @@
+/**********************************************************
+ * Author: 	Andrew Derringer
+ * Program:	P3 - Eco-Simulator
+ * Course:	OSU CS475 Spring 2020
+ * Summary:	Simulation generates temperature and precipitation
+ * 		randomly within range for each month followed by
+ * 		changes in grain height, deer, and cougar population
+ * 		in turn.
+**********************************************************/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -36,16 +46,14 @@ int main() {
     // Starting Values
     int month =       0;
     int year =        2020;
-
     int nowNumDeer =    1;
     int nowNumCougars = 0;
     float nowHeight =   1.;
   
+    // Calculate starting variables for simulation.
     float ang = (30. * (float)month + 15.) * (M_PI / 180.);
-
     float temp = AVG_TEMP - AMP_TEMP * cos(ang);
     float nowTemp = temp + Ranf(&seed, -RANDOM_TEMP, RANDOM_TEMP);
-
     float precip = AVG_PRECIP_PER_MONTH + AMP_PRECIP_PER_MONTH + sin(ang);
     float nowPrecip = precip + Ranf(&seed, -RANDOM_PRECIP, RANDOM_PRECIP);
     if(nowPrecip < 0) {
@@ -91,8 +99,21 @@ float SQR(float x) {
     return x * x;
 }
 
-void watcher(int* year, int* month, unsigned int* seed, float* nowHeight, int* nowNumDeer, int* nowNumCougars, float* nowTemp, float* nowPrecip) {
-    //printf("%15s %15s %15s %15s %15s %15s %15s\n", "year", "month", "Grain Ht(in)", "Deer Pop.", "Cougar Pop.", "Temp(f)", "Precip(in)");
+void watcher(int* year, int* month, float* nowHeight, int* nowNumDeer, int* nowNumCougars, float* nowTemp, float* nowPrecip) {
+    /**********************************
+    * Summary: 	Prints values for each month and calculates
+    * 		next months temp and precip in advance of
+    * 		other threads calculating respective values.
+    * Params:	[1] Year 2020 to 2025
+    * 		[2] month 0 to 11
+    * 		[3] nowHeight of grain (in) shared by all threads.
+    * 		[4] nowNumDeer shared by all threads.
+    * 		[5] nowNumCougars shared by all threads.
+    * 		[6] nowTemp (f) init for first loop in main.
+    * 		[7] nowPrecip (in) init for first loop in main.
+    **********************************/
+
+    // Print column headers for CSV formatted text file.
     printf("Year,Month,Grain Ht(in),Deer Pop.,Cougar Pop.,Temp(f),Precip(in)\n");
 
     while(*year < 2026) {
@@ -102,12 +123,8 @@ void watcher(int* year, int* month, unsigned int* seed, float* nowHeight, int* n
         // Threads replace now values with next values.
         #pragma omp barrier
 
+        // Print results for CSV formatted text file.
         printf("%d,%d,%0.2f,%d,%d,%0.2f,%0.2f\n", *year, *month, *nowHeight, *nowNumDeer, *nowNumCougars, *nowTemp, *nowPrecip);
-;
-        //printf("%15d %15d %15.2f %15d %15d %15.2f %15.2f\n", *year, *month, *nowHeight, *nowNumDeer, *nowNumCougars, *nowTemp, *nowPrecip);
-        //printf("Year:%d Month:%d\n", *year, *month);
-        //printf("Grain Ht(in):%0.2f Deer Pop:%d Cougar Pop:%d\n", *nowHeight, *nowNumDeer, *nowNumCougars);
-        //printf("Temp(f):%0.2f Precip(in):%0.2f\n", *nowTemp, *nowPrecip);
 
         *month += 1;
         if(*month > 11) {
@@ -115,13 +132,12 @@ void watcher(int* year, int* month, unsigned int* seed, float* nowHeight, int* n
             *year += 1;
         }
 
+        // Calculate next month temp and percip.
         float ang = (30. * (float)*month + 15.) * (M_PI / 180.);
-
         float temp = AVG_TEMP - AMP_TEMP * cos(ang);
-        *nowTemp = temp + Ranf(seed, -RANDOM_TEMP, RANDOM_TEMP);
-
+        *nowTemp = temp + Ranf(&seed, -RANDOM_TEMP, RANDOM_TEMP);
         float precip = AVG_PRECIP_PER_MONTH + AMP_PRECIP_PER_MONTH + sin(ang);
-        *nowPrecip = precip + Ranf(seed, -RANDOM_PRECIP, RANDOM_PRECIP);
+        *nowPrecip = precip + Ranf(&seed, -RANDOM_PRECIP, RANDOM_PRECIP);
         if(*nowPrecip < 0) {
             *nowPrecip = 0;
         }
@@ -132,8 +148,20 @@ void watcher(int* year, int* month, unsigned int* seed, float* nowHeight, int* n
 }
 
 void grainDeer(int* year, int* nowNumDeer, int* nowNumCougars, float* nowHeight) {
+    /**********************************
+    * Summary: 	Calculates next months deer population using this
+    * 		months grain height and cougar population then
+    * 		changes data at pointer to share with other threads.
+    * Params:	[1] Year 2020 to 2025
+    * 		[2] nowNumDeer shared by all threads.
+    * 		[3] nowNumCougars shared by all threads.
+    * 		[4] nowHeight of grain (in) shared by all threads.
+    **********************************/
+
     while(*year < 2026) {
         int nextNumDeer;
+ 
+        // If height of grain exceeds door increase pop else decrease.
         if(*nowHeight > *nowNumDeer) {
             nextNumDeer = *nowNumDeer + 1;
         }
@@ -141,6 +169,7 @@ void grainDeer(int* year, int* nowNumDeer, int* nowNumCougars, float* nowHeight)
             nextNumDeer = *nowNumDeer - 1;
         }
 
+        // Decrease deer pop according to cougar pop.
         nextNumDeer -= (*nowNumCougars / 2);
 
         #pragma omp barrier
@@ -155,10 +184,23 @@ void grainDeer(int* year, int* nowNumDeer, int* nowNumCougars, float* nowHeight)
 }
 
 void grain(int* year, float* nowTemp, float* nowPrecip, float* nowHeight, int* nowNumDeer) {
+    /**********************************
+    * Summary: 	Calculates next months grain height using this
+    * 		months temp, precip, and deer population then
+    * 		changes data at pointer to share with other threads.
+    * Params:	[1] Year 2020 to 2025
+    * 		[2] nowTemp (f) init for first loop in main.
+    * 		[3] nowPrecip (in) init for first loop in main.
+    * 		[4] nowHeight of grain (in) shared by all threads.
+    * 		[5] nowNumDeer shared by all threads.
+    **********************************/
+
     while(*year < 2026) {
+        // Calculate temp and recip factor for next month grain growth.
         float tempFactor = exp( -SQR( (*nowTemp - MIDTEMP) / 10. ) );
         float precipFactor = exp( -SQR( (*nowPrecip - MIDPRECIP) / 10. ) );
         float nextHeight = *nowHeight + (tempFactor * precipFactor * GRAIN_GROWS_PER_MONTH);
+        // Decrease grain ht according to deer pop.
         nextHeight -= (float)*nowNumDeer * ONE_DEER_EATS_PER_MONTH * 0.5;
         if(nextHeight < 0) {
             nextHeight = 0;
@@ -175,7 +217,17 @@ void grain(int* year, float* nowTemp, float* nowPrecip, float* nowHeight, int* n
 }
 
 void cougars(int* year, int* nowNumCougars, int* nowNumDeer) {
-    while(*year < 2026) {
+    /**********************************
+    * Summary: 	Calculates next months cougar population using this
+    * 		months deer population then changes data at pointer
+    * 		to share with other threads.
+    * Params:	[1] Year 2020 to 2025
+    * 		[2] nowNumCougars shared by all threads.
+    * 		[3] nowNumDeer shared by all threads.
+    **********************************/
+
+   while(*year < 2026) {
+        // Calculate number of cougars according to deer pop.
         int nextNumCougars = *nowNumDeer / 3;
 
         #pragma omp barrier
